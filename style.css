@@ -1,0 +1,55 @@
+body {
+	font-family: myFont, arial;
+	background: #edebe3;
+
+	margin: auto;
+	width: 70%;
+	padding: 10px;
+	padding-bottom: 0px;
+}
+
+h1 {
+	font-size: 60px;
+	margin: 20px auto;
+}
+
+canvas {
+	background: #bbada0;
+	display: block;
+	margin: auto;
+}
+
+header {
+	width: 50%;
+	margin-top: 20px;
+	margin-left: auto; 
+	margin-right: auto;
+	text-align: center;
+}
+
+
+.title {
+	width: 50%;
+	text-align: center;
+	float: left;
+	margin-top: 10px;
+	margin-bottom: 60px;
+}
+
+.gameUI {
+	width: 50%;
+	height: 50%;
+	text-align: center;
+	float: left;
+}
+
+@font-face {
+	font-family: 'myFont';
+	src: url("font.ttf");
+}
+
+button {
+	width: 70%;
+	height: 30px;
+	margin: 5px auto;
+}
