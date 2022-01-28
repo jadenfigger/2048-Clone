@@ -7,11 +7,14 @@ let sButton = document.querySelector("#sButton");
 let rButton = document.querySelector("#rButton");
 let scoreLabel = document.querySelector("#score");
 let bestScoreLabel = document.querySelector("#bScore");
+let aiCheckBox = document.querySelector("#ai");
 
 let start, pTimeStep;
 let gameRunning = false;
 let gameScore = 0;
 let bestScore = 0;
+
+let aiPlaying = false;
 
 let gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563", 32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcf72", 512: "#edcf72", 1024: "#edc53f", 2048: "#edc22e"};
 let cellSpacing = 20;
@@ -85,9 +88,8 @@ function keyPressed(e) {
 		// 	newGameState = left(gridState);
 		// }
 
-		newGameState = generateNextMove(gridState);
+		newGameState = calculationNextMove(gridState);
 	}
-	console.log(newGameState);
 	// if (arraysEqual(newGameState, gridState)) {
 	// 	return;
 	// }
@@ -200,52 +202,54 @@ function cover_up(mat) {
     return [newGrid, done];
 }
 
-function merge(mat, done) {
+function merge(mat, done, score=undefined) {
     for (let i = 0; i < 4; i++) {
         for (let j = 0; j < 4; j++) {
             if (mat[i][j] == mat[i][j+1] && mat[i][j] != 0) {
-				gameScore += mat[i][j] * 2;
+				if (score != undefined) {
+					score += mat[i][j] * 2;
+				}
                 mat[i][j] *= 2;
                 mat[i][j+1] = 0;
                 done = true;
 			}
 		}
 	}
-    return [mat, done];
+    return [mat, done, score];
 }
 
-function up(game) {
+function up(game, score) {
     game = transpose(game);
     let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1]);
+    gameInfo = merge(gameInfo[0], gameInfo[1], score);
     game = cover_up(gameInfo[0])[0];
     game = transpose(game);
-    return game;
+    return [game, gameInfo[2]];
 }
 
-function down(game) {
+function down(game, score) {
 	game = reverse(transpose(game));
     let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1]);
+    gameInfo = merge(gameInfo[0], gameInfo[1], score);
     game = cover_up(gameInfo[0])[0];
     game = transpose(reverse(game));
-    return game;
+    return [game, gameInfo[2]];
 }
 
-function left(game) {
+function left(game, score) {
     let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1]);
+    gameInfo = merge(gameInfo[0], gameInfo[1], score);
     game = cover_up(gameInfo[0])[0];
-    return game;
+    return [game, gameInfo[2]];
 }
 
-function right(game) {
+function right(game, score) {
     game = reverse(game);
     gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1]);
+    gameInfo = merge(gameInfo[0], gameInfo[1], score);
     game = cover_up(gameInfo[0])[0];
     game = reverse(game);
-    return game;
+    return [game, gameInfo[2]];
 }
 
 
@@ -281,10 +285,59 @@ function step(timeStep) {
 	} else {
 		enterGameOverState();
 	}
-
 }
 
+
+function enterAIGameLoop() {
+	let move = calculateNextMove(gridState);
+
+	let gameState = undefined;
+	switch(move) {
+		case 1: 
+			gameState = up(gridState, gameScore);
+			break;
+		case 2:
+			gameState = right(gridState, gameScore);
+			break;
+		case 3:
+			gameState = down(gridState, gameScore);
+			break;
+		case 4:
+			gameState = left(gridState, gameScore);
+			break;
+	}
+
+	gridState = gameState[0];
+	gameScore = gameState[1];
+	let value = 4;
+	if (Math.random() < 0.9) {
+		value = 2;
+	}
+	gridState = addTile(gridState, value);
+
+	if (gameScore > bestScore) {
+		bestScore = gameScore;
+	}
+	scoreLabel.innerHTML = "Score: " + score;
+	bestScoreLabel.innerHTML = "Best Score: " + bestScore;
+
+
+	if (isBoardFull(gridState)) {
+		gameRunning = !checkIfGameOver();
+		clearInterval(gameLoop);
+		gameLoop = null;
+	}
+
+	drawGrid();
+}
+
+
 sButton.addEventListener("click", function() {
+	if (aiCheckBox.checked) {
+		gameLoop = setInterval(enterAIGameLoop, 500);
+
+		return;
+	}
 	gameRunning = true;
 	window.requestAnimationFrame(step);
 
@@ -294,9 +347,12 @@ sButton.addEventListener("click", function() {
 })
 
 rButton.addEventListener("click", function() {
+	clearInterval(gameLoop);
+	gameLoop = null;
 	if (!gameRunning && bestScore == 0) {
 		return;
 	}
+
 	gameRunning = true;
 	window.requestAnimationFrame(step);
 

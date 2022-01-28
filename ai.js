@@ -3,7 +3,7 @@
 // 2 = right
 // 3 = down
 // 4 = left
-function calculationNextMove(gs) {
+function calculateNextMove(gs) {
 	let bestMove = -1;
 	let bestScore = 0;
 
@@ -15,7 +15,8 @@ function calculationNextMove(gs) {
 			bestMove = move;
 		}
 	}
-	return simulateMove(gs, bestMove);
+
+	return bestMove;
 }
 
 
@@ -24,7 +25,7 @@ function calculateScore(board, move) {
 	if (arraysEqual(newBoard, board)) {
 		return 0;
 	}
-	return generateScore(newBoard, 0, 3);
+	return generateScore(newBoard, 0, 2);
 }
 
 
@@ -32,16 +33,16 @@ function simulateMove(board, move) {
 	let newBoard = undefined;
 	switch(move) {
 		case 1: 
-			newBoard = up(board);
+			newBoard = up(board)[0];
 			break;
 		case 2:
-			newBoard = right(board);
+			newBoard = right(board)[0];
 			break;
 		case 3:
-			newBoard = down(board);
+			newBoard = down(board)[0];
 			break;
 		case 4:
-			newBoard = left(board);
+			newBoard = left(board)[0];
 			break;
 	}
 	return newBoard;
@@ -49,7 +50,9 @@ function simulateMove(board, move) {
 
 function generateScore(board, curDepth, maxDepth) {
 	if (curDepth == maxDepth) {
-		return calculateFinalScore(board);
+		let finalScore = calculateFinalScore(board);
+
+		return finalScore;
 	}
 
 	totalScore = 0;
@@ -68,7 +71,6 @@ function generateScore(board, curDepth, maxDepth) {
 			}
 		}
 	}
-
 	return totalScore;
 }
 
@@ -90,8 +92,17 @@ function calculateFinalScore(board) {
 	for (let y = 0; y < 4; y++) {
 		for (let x = 0; x < 4; x++) {
 			if (board[y][x] == 0) {
-				numOfEmpty = 0;
+				numOfEmpty += 1;
 			}
 		}
 	}
+	return numOfEmpty;
+
+	// let sum = 0
+	// for (let y = 0; y < 4; y++) {
+	// 	for (let x = 0; x < 4; x++) {
+	// 		sum += board[y][x];
+	// 	}
+	// }
+	// return sum;
 }
