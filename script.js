@@ -291,6 +291,7 @@ function step(timeStep) {
 function enterAIGameLoop() {
 	let move = calculateNextMove(gridState);
 
+	
 	let gameState = undefined;
 	switch(move) {
 		case 1: 
