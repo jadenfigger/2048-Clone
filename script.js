@@ -75,19 +75,22 @@ function keyPressed(e) {
 	if (!gameRunning) {
 		return;
 	} else {
-		if (keyCode == 38) {
-			newGameState = up(gridState);
-		} else if (keyCode == 40) {
-			newGameState = down(gridState);
-		} else if (keyCode ==  39) {
-			newGameState = right(gridState);
-		} else if (keyCode == 37) {
-			newGameState = left(gridState);
-		}
+		// if (keyCode == 38) {
+		// 	newGameState = up(gridState);
+		// } else if (keyCode == 40) {
+		// 	newGameState = down(gridState);
+		// } else if (keyCode ==  39) {
+		// 	newGameState = right(gridState);
+		// } else if (keyCode == 37) {
+		// 	newGameState = left(gridState);
+		// }
+
+		newGameState = generateNextMove(gridState);
 	}
-	if (arraysEqual(newGameState, gridState)) {
-		return;
-	}
+	console.log(newGameState);
+	// if (arraysEqual(newGameState, gridState)) {
+	// 	return;
+	// }
 	if (newGameState != undefined) {
 		gridState = newGameState;
 		let value = 4;
