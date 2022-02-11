@@ -37,79 +37,6 @@ function draw() {
 	drawGrid();	
 }
 
-function drawGrid() {
-	for (let y = 0; y < 4; y++) {
-		for (let x = 0; x < 4; x++) {
-			ctx.fillStyle = gridColorStates[gridState[y][x]];
-			let xPos = cellSpacing + (cellWidth * x);
-			let yPos = cellSpacing + (cellWidth * y);
-			ctx.fillRect(xPos, yPos, cellWidth-cellSpacing, cellWidth-cellSpacing);	
-			
-			
-			if (gridState[y][x] != 0) {
-				ctx.fillStyle = "#786e65";
-				ctx.font = "70px myFont";
-				let xTextPos = xPos+((cellWidth-cellSpacing)/2);
-				let yTextPos = yPos+(24*(cellWidth-cellSpacing)/32);
-				if (gridState[y][x] > 512) {
-					ctx.font = "40px myFont";
-					yTextPos = yPos+(5*(cellWidth-cellSpacing)/8)
-				}
-				ctx.textAlign = 'center';
-				ctx.fillText(gridState[y][x], xTextPos, yTextPos);
-			}
-		}
-	}
-}
-
-
-function keyPressed(e) {
-	let keyCode = e.keyCode;
-	// up 38
-	// right 39
-	// down 40
-	// left 37
-	let gameInfo = undefined;
-	if (!gameRunning) {
-		return;
-	} else {
-		if (keyCode == 38) {
-			gameInfo = up(gridState.slice(), gameScore);
-		} else if (keyCode == 40) {
-			gameInfo = down(gridState.slice(), gameScore);
-		} else if (keyCode ==  39) {
-			gameInfo = right(gridState.slice(), gameScore);
-		} else if (keyCode == 37) {
-			gameInfo = left(gridState.slice(), gameScore);
-		}
-
-	}
-	if (gameInfo != undefined) {
-		if (arraysEqual(gameInfo[0], gridState)) {
-			return;
-		}
-		gridState = gameInfo[0];
-		gameScore = gameInfo[1];
-		console.log(gameScore);
-		let value = 4;
-		if (Math.random() < 0.9) {
-			value = 2;
-		}
-		gridState = addTile(gridState, value);
-
-		if (gameScore > bestScore) {
-			bestScore = gameScore;
-		}
-		scoreLabel.innerHTML = "Score: " + gameScore;
-		bestScoreLabel.innerHTML = "Best Score: " + bestScore;
-
-
-		if (isBoardFull(gridState)) {
-			gameRunning = !checkIfGameOver();
-		}
-	}
-}
-
 
 function randomBlankGridStart() {
 	let newGrid = [];
@@ -174,78 +101,25 @@ function checkIfGameOver() {
  
 
 function cover_up(mat) {
-    let newGrid = [];
-    for (let j = 0; j < 4; j++) {
-        partial_new = [];
-        for (let i = 0; i < 4; i++) {
-            partial_new.push(0);
-		}
-        newGrid.push(partial_new);
-	}
-	done = false;
-    for (let i = 0; i < 4; i++) {
-        count = 0;
-        for (let j = 0; j < 4; j++) {
-            if (mat[i][j] != 0) {
-                newGrid[i][count] = mat[i][j];
-                if (j != count) {
-                    done = true;
-				}
-                count += 1;
-			}
+    let newGrid = [0, 0, 0, 0];
+    let count = 0;
+	for (let j = 0; j < 4; j++) {
+		if (mat[j] != 0) {
+			newGrid[count] = mat[j];
+			count += 1;
 		}
 	}
-    return [newGrid, done];
+    return newGrid;
 }
 
-function merge(mat, done, score=undefined) {
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            if (mat[i][j] == mat[i][j+1] && mat[i][j] != 0) {
-				if (score != undefined) {
-					score += mat[i][j] * 2;
-				}
-                mat[i][j] *= 2;
-                mat[i][j+1] = 0;
-                done = true;
-			}
+function merge(mat) {
+	for (let j = 0; j < 4; j++) {
+		if (mat[j] == mat[j+1] && mat[j] != 0) {
+			mat[j] *= 2;
+			mat[j+1] = 0;
 		}
 	}
-    return [mat, done, score];
-}
-
-function up(game, score) {
-    game = transpose(game);
-    let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1], score);
-    game = cover_up(gameInfo[0])[0];
-    game = transpose(game);
-    return [game, gameInfo[2]];
-}
-
-function down(game, score) {
-	game = reverse(transpose(game));
-    let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1], score);
-    game = cover_up(gameInfo[0])[0];
-    game = transpose(reverse(game));
-    return [game, gameInfo[2]];
-}
-
-function left(game, score) {
-    let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1], score);
-    game = cover_up(gameInfo[0])[0];
-    return [game, gameInfo[2]];
-}
-
-function right(game, score) {
-    game = reverse(game);
-    gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1], score);
-    game = cover_up(gameInfo[0])[0];
-    game = reverse(game);
-    return [game, gameInfo[2]];
+    return mat;
 }
 
 
@@ -283,69 +157,113 @@ function step(timeStep) {
 	}
 }
 
-
-function enterAIGameLoop() {
-	let move = calculateNextMove(gridState);
-
-	
-	let gameState = undefined;
-	switch(move) {
-		case 1: 
-			gameState = up(gridState, gameScore);
-			break;
-		case 2:
-			gameState = right(gridState, gameScore);
-			break;
-		case 3:
-			gameState = down(gridState, gameScore);
-			break;
-		case 4:
-			gameState = left(gridState, gameScore);
-			break;
+function drawGrid() {
+	for (let y = 0; y < 4; y++) {
+		for (let x = 0; x < 4; x++) {
+			ctx.fillStyle = gridColorStates[gridState[y][x]];
+			let xPos = cellSpacing + (cellWidth * x);
+			let yPos = cellSpacing + (cellWidth * y);
+			ctx.fillRect(xPos, yPos, cellWidth-cellSpacing, cellWidth-cellSpacing);	
+			
+			
+			if (gridState[y][x] != 0) {
+				ctx.fillStyle = "#786e65";
+				ctx.font = "70px myFont";
+				let xTextPos = xPos+((cellWidth-cellSpacing)/2);
+				let yTextPos = yPos+(24*(cellWidth-cellSpacing)/32);
+				if (gridState[y][x] > 512) {
+					ctx.font = "40px myFont";
+					yTextPos = yPos+(5*(cellWidth-cellSpacing)/8)
+				}
+				ctx.textAlign = 'center';
+				ctx.fillText(gridState[y][x], xTextPos, yTextPos);
+			}
+		}
 	}
-
-	gridState = gameState[0];
-	gameScore = gameState[1];
-	let value = 4;
-	if (Math.random() < 0.9) {
-		value = 2;
-	}
-	gridState = addTile(gridState, value);
-
-	if (gameScore > bestScore) {
-		bestScore = gameScore;
-	}
-	scoreLabel.innerHTML = "Score: " + score;
-	bestScoreLabel.innerHTML = "Best Score: " + bestScore;
-
-
-	if (isBoardFull(gridState)) {
-		gameRunning = !checkIfGameOver();
-		clearInterval(gameLoop);
-		gameLoop = null;
-	}
-
-	drawGrid();
 }
 
-let gameLoop = undefined;
-sButton.addEventListener("click", function() {
-	if (aiCheckBox.checked) {
-		gameLoop = setInterval(enterAIGameLoop, 500);
 
+function keyPressed(e) {
+	let keyCode = e.keyCode;
+	// up 38
+	// right 39
+	// down 40
+	// left 37
+	let newGameBoard = null;
+	if (!gameRunning) {
 		return;
+	} else {
+		if (keyCode == 38) {
+		} else if (keyCode == 40) {
+		} else if (keyCode ==  39) {
+		} else if (keyCode == 37) {
+		}
+
 	}
-	gameRunning = true;
-	window.requestAnimationFrame(step);
+	if (gameInfo != undefined) {
+		if (arraysEqual(gameInfo[0], gridState)) {
+			return;
+		}
+		gridState = gameInfo[0];
+		gameScore = gameInfo[1];
+		console.log(gameScore);
+		let value = 4;
+		if (Math.random() < 0.9) {
+			value = 2;
+		}
+		gridState = addTile(gridState, value);
 
-	gameScore = 0;
-	gridState = randomBlankGridStart();
+		if (gameScore > bestScore) {
+			bestScore = gameScore;
+		}
+		scoreLabel.innerHTML = "Score: " + gameScore;
+		bestScoreLabel.innerHTML = "Best Score: " + bestScore;
 
+
+		if (isBoardFull(gridState)) {
+			gameRunning = !checkIfGameOver();
+		}
+	}
+}
+
+function permute(str, l, r){
+	console.log(str, l, r);
+	if (l == r) {
+		console.log(str);
+	} else {
+		for (let i = l; i <= r; i++)
+		{
+			str = swap(str, l, i);
+			permute(str, l + 1, r);
+			str = swap(str, l, i);
+		}
+	}
+}
+	 
+function swap(a, i, j) {
+	let temp;
+	let charArray = a.split("");
+	temp = charArray[i] ;
+	charArray[i] = charArray[j];
+	charArray[j] = temp;
+	return (charArray).join("");
+}
+
+sButton.addEventListener("click", function() {
+	// gameRunning = true;
+	// window.requestAnimationFrame(step);
+
+	// gameScore = 0;
+	// gridState = randomBlankGridStart();
+
+	
+	 
+	let str = "ABC";
+	let n = str.length;
+	permute(str, 0, n-1);
 })
 
 rButton.addEventListener("click", function() {
-	clearInterval(gameLoop);
-	gameLoop = null;
 	if (!gameRunning && bestScore == 0) {
 		return;
 	}
@@ -357,3 +275,34 @@ rButton.addEventListener("click", function() {
 	gridState = randomBlankGridStart();
 
 })
+
+
+function getCombn(arr, pre) {
+	pre = pre || '';
+	if (!arr.length) {
+		return pre;
+	}
+	var ans = arr[0].reduce(function(ans, value) {
+		return ans.concat(getCombn(arr.slice(1), pre + value));
+	}, []);
+	return ans;
+}
+
+
+let innerarray = ['2 ', '4 ', '8 ', '16 ', '32 ','64 ', '128 ', '256 ', '512 ', '1024 ', '2048 ', '4096 ', '8192 ', '16384 ', '32768 '];
+let allCombn = getCombn([innerarray, innerarray, innerarray, innerarray]);
+
+let preTransf = [];
+let postTransf = [];
+for (let i = 0; i < allCombn.length; i++) {
+	let preState = allCombn[i].split(' ');
+	preState.pop();
+	preTransf.push(preState);
+
+	let newState = cover_up(preState);
+	merge(newState);
+	newState = cover_up(newState);
+	postTransf.push(newState);
+}
+
+				
