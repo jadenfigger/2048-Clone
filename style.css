@@ -13,10 +13,15 @@ h1 {
 	margin: 20px auto;
 }
 
+.aboveGame {
+	width: 500px;
+	margin: 0 auto;
+}
+
 canvas {
 	background: #bbada0;
 	display: block;
-	margin: auto;
+	margin: 0 auto;
 }
 
 header {
@@ -41,6 +46,15 @@ header {
 	height: 50%;
 	text-align: center;
 	float: left;
+}
+
+.heading, .aboveGame {
+	width: 500px;
+	margin: 0 auto;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 20px;
 }
 
 @font-face {

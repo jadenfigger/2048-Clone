@@ -17,8 +17,8 @@ let bestScore = 0;
 let aiPlaying = false;
 
 let gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563", 32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcf72", 512: "#edcf72", 1024: "#edc53f", 2048: "#edc22e"};
-let cellSpacing = 20;
-let cellWidth = 700/4;
+let cellSpacing = 15;
+let cellWidth = (document.querySelector("#myCanvas").width - cellSpacing) / 4;
 
 
 let tileMoveVel = 10;
@@ -48,11 +48,11 @@ function drawGrid() {
 			
 			if (gridState[y][x] != 0) {
 				ctx.fillStyle = "#786e65";
-				ctx.font = "90px myFont";
+				ctx.font = "70px myFont";
 				let xTextPos = xPos+((cellWidth-cellSpacing)/2);
-				let yTextPos = yPos+(23*(cellWidth-cellSpacing)/32);
+				let yTextPos = yPos+(24*(cellWidth-cellSpacing)/32);
 				if (gridState[y][x] > 512) {
-					ctx.font = "50px myFont";
+					ctx.font = "40px myFont";
 					yTextPos = yPos+(5*(cellWidth-cellSpacing)/8)
 				}
 				ctx.textAlign = 'center';
@@ -65,36 +65,32 @@ function drawGrid() {
 
 function keyPressed(e) {
 	let keyCode = e.keyCode;
-
-	if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
-		e.preventDefault();
-	}
-
 	// up 38
 	// right 39
 	// down 40
 	// left 37
-	let newGameState = undefined;
+	let gameInfo = undefined;
 	if (!gameRunning) {
 		return;
 	} else {
-		// if (keyCode == 38) {
-		// 	newGameState = up(gridState);
-		// } else if (keyCode == 40) {
-		// 	newGameState = down(gridState);
-		// } else if (keyCode ==  39) {
-		// 	newGameState = right(gridState);
-		// } else if (keyCode == 37) {
-		// 	newGameState = left(gridState);
-		// }
+		if (keyCode == 38) {
+			gameInfo = up(gridState.slice(), gameScore);
+		} else if (keyCode == 40) {
+			gameInfo = down(gridState.slice(), gameScore);
+		} else if (keyCode ==  39) {
+			gameInfo = right(gridState.slice(), gameScore);
+		} else if (keyCode == 37) {
+			gameInfo = left(gridState.slice(), gameScore);
+		}
 
-		newGameState = calculationNextMove(gridState);
 	}
-	// if (arraysEqual(newGameState, gridState)) {
-	// 	return;
-	// }
-	if (newGameState != undefined) {
-		gridState = newGameState;
+	if (gameInfo != undefined) {
+		if (arraysEqual(gameInfo[0], gridState)) {
+			return;
+		}
+		gridState = gameInfo[0];
+		gameScore = gameInfo[1];
+		console.log(gameScore);
 		let value = 4;
 		if (Math.random() < 0.9) {
 			value = 2;
@@ -332,7 +328,7 @@ function enterAIGameLoop() {
 	drawGrid();
 }
 
-
+let gameLoop = undefined;
 sButton.addEventListener("click", function() {
 	if (aiCheckBox.checked) {
 		gameLoop = setInterval(enterAIGameLoop, 500);
