@@ -1,8 +1,3 @@
-
-// 1 = up
-// 2 = right
-// 3 = down
-// 4 = left
 function calculateNextMove(gs) {
 	let bestMove = -1;
 	let bestScore = 0;
@@ -25,27 +20,28 @@ function calculateScore(board, move) {
 	if (arraysEqual(newBoard, board)) {
 		return 0;
 	}
-	return generateScore(newBoard, 0, 2);
+	return generateScore(newBoard, 0, 1);
 }
 
 
-function simulateMove(board, move) {
-	let newBoard = undefined;
-	switch(move) {
+function simulateMove(board, dir) {
+	let newGridState = undefined;
+	switch(dir) {
 		case 1: 
-			newBoard = up(board)[0];
+			newGridState = transpose(move(JSON.parse(JSON.stringify(transpose(board)))));
 			break;
 		case 2:
-			newBoard = right(board)[0];
+			newGridState = reverse(move(JSON.parse(JSON.stringify(reverse(board)))));
 			break;
 		case 3:
-			newBoard = down(board)[0];
+			newGridState = transpose(reverse(move(JSON.parse(JSON.stringify(reverse(transpose(board)))))));
+
 			break;
 		case 4:
-			newBoard = left(board)[0];
+			newGridState = move(JSON.parse(JSON.stringify(board)));
 			break;
 	}
-	return newBoard;
+	return newGridState;
 }
 
 function generateScore(board, curDepth, maxDepth) {
@@ -59,12 +55,12 @@ function generateScore(board, curDepth, maxDepth) {
 	for (let y = 0; y < 4; y++) {
 		for (let x = 0; x < 4; x++) {
 			if (board[y][x] == 0) {
-				let newBoard2 = board;
+				let newBoard2 = JSON.parse(JSON.stringify(board));
 				newBoard2[y][x] = 2;
 				let moveScore2 = calculateMoveScore(newBoard2, curDepth, maxDepth);
 				totalScore += (0.9 * moveScore2);
 
-				let newBoard4 = board;
+				let newBoard4 = JSON.parse(JSON.stringify(board));
 				newBoard4[y][x] = 4;
 				let moveScore4 = calculateMoveScore(newBoard4, curDepth, maxDepth);
 				totalScore += (0.1 * moveScore4);
