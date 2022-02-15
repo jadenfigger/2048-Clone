@@ -1,51 +1,48 @@
+let counter = 0;
 
-// 1 = up
-// 2 = right
-// 3 = down
-// 4 = left
-function calculateNextMove(gs) {
+function calculateNextMove(gs, depth) {
+	counter = 0;
 	let bestMove = -1;
 	let bestScore = 0;
 
+
 	for (let move = 1; move <= 4; move++) {
-		let score = calculateScore(gs, move);
+		let score = calculateScore(gs, move, depth);
 
 		if (score > bestScore) {
 			bestScore = score;
 			bestMove = move;
 		}
 	}
-
-	return bestMove;
+	return [bestMove, counter];
 }
 
-
-function calculateScore(board, move) {
+function calculateScore(board, move, depth) {
 	newBoard = simulateMove(board, move);
-	if (arraysEqual(newBoard, board)) {
+	if (_.isEqual(newBoard, board)) {
 		return 0;
 	}
-	return generateScore(newBoard, 0, 2);
+	return generateScore(newBoard, 0, depth);
 }
 
-
-function simulateMove(board, move) {
-	let newBoard = undefined;
-	switch(move) {
+function simulateMove(board, dir) {
+	let newGridState = undefined;
+	switch(dir) {
 		case 1: 
-			newBoard = up(board)[0];
+			newGridState = transpose(move(board.clone()));
 			break;
 		case 2:
-			newBoard = right(board)[0];
+			newGridState = reverse(move(board.clone()));
 			break;
 		case 3:
-			newBoard = down(board)[0];
+			newGridState = transpose(reverse(move(board.clone())));
 			break;
 		case 4:
-			newBoard = left(board)[0];
+			newGridState = move(board.clone());
 			break;
 	}
-	return newBoard;
+	counter++;
+	return newGridState;
 }
 
 function generateScore(board, curDepth, maxDepth) {
@@ -59,12 +56,12 @@ function generateScore(board, curDepth, maxDepth) {
 	for (let y = 0; y < 4; y++) {
 		for (let x = 0; x < 4; x++) {
 			if (board[y][x] == 0) {
-				let newBoard2 = board;
+				let newBoard2 = board.clone();
 				newBoard2[y][x] = 2;
 				let moveScore2 = calculateMoveScore(newBoard2, curDepth, maxDepth);
 				totalScore += (0.9 * moveScore2);
 
-				let newBoard4 = board;
+				let newBoard4 = board.clone();
 				newBoard4[y][x] = 4;
 				let moveScore4 = calculateMoveScore(newBoard4, curDepth, maxDepth);
 				totalScore += (0.1 * moveScore4);
@@ -78,7 +75,7 @@ function calculateMoveScore(board, curDepth, maxDepth) {
 	let bestScore = 0;
 	for (let move = 1; move <= 4; move++) {
 		let newBoard = simulateMove(board, move);
-		if (!arraysEqual(newBoard, board)) {
+		if (!_.isEqual(newBoard, board)) {
 			let score = generateScore(newBoard, curDepth+1, maxDepth);
 
 			bestScore = Math.max(score, bestScore);
@@ -88,21 +85,52 @@ function calculateMoveScore(board, curDepth, maxDepth) {
 }
 
 function calculateFinalScore(board) {
-	let numOfEmpty = 0;
+	// let numOfEmpty = 0;
+	// for (let y = 0; y < 4; y++) {
+	// 	for (let x = 0; x < 4; x++) {
+	// 		if (board[y][x] == 0) {
+	// 			numOfEmpty += 1;
+	// 		}
+	// 	}
+	// }
+	// return numOfEmpty;
+
+	let score = 0;
+	let weightedGrid = [[4**15, 4**14, 4**13, 4**12],
+						[4**8, 4**9, 4**10, 4**11],
+						[4**7, 4**6, 4**5, 4**4],
+						[0, 4**1, 4**2, 4**3]]
+
 	for (let y = 0; y < 4; y++) {
-		for (let x = 0; x < 4; x++) {
-			if (board[y][x] == 0) {
-				numOfEmpty += 1;
+		for (let x = 0; x < 4; x++) {	
+			score += board[y][x] * weightedGrid[y][x];
+			score += checkIfNeighbordsSame(y, x, board);
+		}
+	}
+
+	return score;
+	
+}
+
+// let b = [[0, 0, 0, 0],
+// 		 [0, 0, 0, 0],
+// 		 [128, 128, 0, 0],
+// 		 [0, 0, 0, 0]];
+// console.log(calculateFinalScore(b));
+
+function checkIfNeighbordsSame(y, x, board) {
+	let tot = 0;
+	for (let yDiff = -1; yDiff <= 1; yDiff++) {
+		for (let xDiff = -1; xDiff <= 1; xDiff++) {
+			let nY = y + yDiff;
+			let nX = x + xDiff;
+			if (nY < 0 || nY > 3 || nX < 0 || nX > 3 || (nY == y && nX == x) || (nY != y && nX != x)) {
+				continue;
+			}
+			if (board[y][x] == board[nY][nX]) {
+				tot += 1;
 			}
 		}
 	}
-	return numOfEmpty;
-
-	// let sum = 0
-	// for (let y = 0; y < 4; y++) {
-	// 	for (let x = 0; x < 4; x++) {
-	// 		sum += board[y][x];
-	// 	}
-	// }
-	// return sum;
+	return tot;
 }

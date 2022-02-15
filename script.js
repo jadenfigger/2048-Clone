@@ -1,115 +1,33 @@
+window.addEventListener("keydown", keyPressed, false);
+
 let canvas = document.getElementById("myCanvas");
 let ctx = canvas.getContext("2d");
-
-window.addEventListener("keydown", keyPressed, false);
 
 let sButton = document.querySelector("#sButton");
 let rButton = document.querySelector("#rButton");
 let scoreLabel = document.querySelector("#score");
 let bestScoreLabel = document.querySelector("#bScore");
-let aiCheckBox = document.querySelector("#ai");
 
-let start, pTimeStep;
 let gameRunning = false;
 let gameScore = 0;
 let bestScore = 0;
-
-let aiPlaying = false;
 
 let gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563", 32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcf72", 512: "#edcf72", 1024: "#edc53f", 2048: "#edc22e"};
 let cellSpacing = 15;
 let cellWidth = (document.querySelector("#myCanvas").width - cellSpacing) / 4;
 
+let gridState;
 
-let tileMoveVel = 10;
+let depth = 2; 
 
-let gridState = randomBlankGridStart();
+Array.prototype.clone = function() {
+	let newArray = [];
 
-function draw() {
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-	if (gameScore > bestScore) {
-		bestScore = gameScore;
-	}
-	scoreLabel.innerHTML = "Score: " + gameScore;
-	bestScoreLabel.innerHTML = "Best Score: " + bestScore;
-
-	drawGrid();	
+	for (var i = 0; i < this.length; i++)
+		newArray[i] = this[i].slice();
+	
+	return newArray;
 }
-
-function drawGrid() {
-	for (let y = 0; y < 4; y++) {
-		for (let x = 0; x < 4; x++) {
-			ctx.fillStyle = gridColorStates[gridState[y][x]];
-			let xPos = cellSpacing + (cellWidth * x);
-			let yPos = cellSpacing + (cellWidth * y);
-			ctx.fillRect(xPos, yPos, cellWidth-cellSpacing, cellWidth-cellSpacing);	
-			
-			
-			if (gridState[y][x] != 0) {
-				ctx.fillStyle = "#786e65";
-				ctx.font = "70px myFont";
-				let xTextPos = xPos+((cellWidth-cellSpacing)/2);
-				let yTextPos = yPos+(24*(cellWidth-cellSpacing)/32);
-				if (gridState[y][x] > 512) {
-					ctx.font = "40px myFont";
-					yTextPos = yPos+(5*(cellWidth-cellSpacing)/8)
-				}
-				ctx.textAlign = 'center';
-				ctx.fillText(gridState[y][x], xTextPos, yTextPos);
-			}
-		}
-	}
-}
-
-
-function keyPressed(e) {
-	let keyCode = e.keyCode;
-	// up 38
-	// right 39
-	// down 40
-	// left 37
-	let gameInfo = undefined;
-	if (!gameRunning) {
-		return;
-	} else {
-		if (keyCode == 38) {
-			gameInfo = up(gridState.slice(), gameScore);
-		} else if (keyCode == 40) {
-			gameInfo = down(gridState.slice(), gameScore);
-		} else if (keyCode ==  39) {
-			gameInfo = right(gridState.slice(), gameScore);
-		} else if (keyCode == 37) {
-			gameInfo = left(gridState.slice(), gameScore);
-		}
-
-	}
-	if (gameInfo != undefined) {
-		if (arraysEqual(gameInfo[0], gridState)) {
-			return;
-		}
-		gridState = gameInfo[0];
-		gameScore = gameInfo[1];
-		console.log(gameScore);
-		let value = 4;
-		if (Math.random() < 0.9) {
-			value = 2;
-		}
-		gridState = addTile(gridState, value);
-
-		if (gameScore > bestScore) {
-			bestScore = gameScore;
-		}
-		scoreLabel.innerHTML = "Score: " + gameScore;
-		bestScoreLabel.innerHTML = "Best Score: " + bestScore;
-
-
-		if (isBoardFull(gridState)) {
-			gameRunning = !checkIfGameOver();
-		}
-	}
-}
-
 
 function randomBlankGridStart() {
 	let newGrid = [];
@@ -119,8 +37,6 @@ function randomBlankGridStart() {
 			newGrid[i].push(0);
 		}
 	}
-	newGrid = addTile(newGrid, 2);
-	newGrid = addTile(newGrid, 2);
 	return newGrid;
 }
 
@@ -144,108 +60,33 @@ function addTile(mat, value) {
 		y = Math.floor(Math.random() * 4);
 	}
 	mat[y][x] = value;
-	return mat;
 }
 
-function arraysEqual(a1,a2) {
-    /* WARNING: arrays must not contain {objects} or behavior may be undefined */
-    return JSON.stringify(a1)==JSON.stringify(a2);
-}
-
-function enterGameOverState() {
-	let gameScore = 0;
-
-	ctx.fillStyle = "rgba(100, 100, 100, 0.6)";
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-	ctx.fillStyle = "rgb(255, 255, 255)";
-	ctx.font = "100px myFont";
-	ctx.textAlign = 'center';
-	ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2);
-}
-
-function checkIfGameOver() {
-	if (arraysEqual(up(gridState), gridState) && arraysEqual(down(gridState), gridState) && 
-	    arraysEqual(right(gridState), gridState) && arraysEqual(left(gridState), gridState)) {
-			return true;
+function hexToHSL(hex) {
+	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	  r = parseInt(result[1], 16);
+	  g = parseInt(result[2], 16);
+	  b = parseInt(result[3], 16);
+	  r /= 255, g /= 255, b /= 255;
+	  var max = Math.max(r, g, b), min = Math.min(r, g, b);
+	  var h, s, l = (max + min) / 2;
+	  if(max == min){
+		h = s = 0; // achromatic
+	  }else{
+		var d = max - min;
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		switch(max){
+		  case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+		  case g: h = (b - r) / d + 2; break;
+		  case b: h = (r - g) / d + 4; break;
 		}
-	return false;
-}
- 
-
-function cover_up(mat) {
-    let newGrid = [];
-    for (let j = 0; j < 4; j++) {
-        partial_new = [];
-        for (let i = 0; i < 4; i++) {
-            partial_new.push(0);
-		}
-        newGrid.push(partial_new);
-	}
-	done = false;
-    for (let i = 0; i < 4; i++) {
-        count = 0;
-        for (let j = 0; j < 4; j++) {
-            if (mat[i][j] != 0) {
-                newGrid[i][count] = mat[i][j];
-                if (j != count) {
-                    done = true;
-				}
-                count += 1;
-			}
-		}
-	}
-    return [newGrid, done];
-}
-
-function merge(mat, done, score=undefined) {
-    for (let i = 0; i < 4; i++) {
-        for (let j = 0; j < 4; j++) {
-            if (mat[i][j] == mat[i][j+1] && mat[i][j] != 0) {
-				if (score != undefined) {
-					score += mat[i][j] * 2;
-				}
-                mat[i][j] *= 2;
-                mat[i][j+1] = 0;
-                done = true;
-			}
-		}
-	}
-    return [mat, done, score];
-}
-
-function up(game, score) {
-    game = transpose(game);
-    let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1], score);
-    game = cover_up(gameInfo[0])[0];
-    game = transpose(game);
-    return [game, gameInfo[2]];
-}
-
-function down(game, score) {
-	game = reverse(transpose(game));
-    let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1], score);
-    game = cover_up(gameInfo[0])[0];
-    game = transpose(reverse(game));
-    return [game, gameInfo[2]];
-}
-
-function left(game, score) {
-    let gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1], score);
-    game = cover_up(gameInfo[0])[0];
-    return [game, gameInfo[2]];
-}
-
-function right(game, score) {
-    game = reverse(game);
-    gameInfo = cover_up(game);
-    gameInfo = merge(gameInfo[0], gameInfo[1], score);
-    game = cover_up(gameInfo[0])[0];
-    game = reverse(game);
-    return [game, gameInfo[2]];
+		h /= 6;
+	  }
+	var HSL = new Object();
+	HSL['h']=h;
+	HSL['s']=s;
+	HSL['l']=l;
+	return HSL;
 }
 
 
@@ -260,7 +101,6 @@ function transpose(mat) {
     return newList;
 }
 
-
 function reverse(mat) {
     let newList = [];
     for (let i = 0; i < 4; i++) {
@@ -272,9 +112,113 @@ function reverse(mat) {
     return newList;
 }
 
+function cover_up(mat) {
+    let newGrid = [0, 0, 0, 0];
+    let count = 0;
+	for (let j = 0; j < 4; j++) {
+		if (mat[j] != 0) {
+			newGrid[count] = mat[j];
+			count += 1;
+		}
+	}
+    return newGrid;
+}
+
+function checkIfGameOver(arr) {
+	for (let dir = 1; dir <= 4; dir++) {
+		let nGrid = simulateMove(arr, dir);
+		if (!_.isEqual(nGrid, gridState)) {
+			return false;
+		}
+	}
+	return true;
+} 
+
+function merge(mat) {
+	for (let j = 0; j < 4; j++) {
+		if (mat[j] === mat[j+1] && mat[j] !== 0) {
+			mat[j] *= 2;
+			mat[j+1] = 0;
+		}
+	}
+    return mat;
+}
+
+function move(arr) {
+	let newArray = [];
+	for (let x = 0; x < 4; x++) {
+		newArray.push(cover_up(merge(cover_up(arr[x]))));
+	}
+	return newArray;
+}
+
+function keyPressed(e) {
+	let keyCode = e.keyCode;
+	// up 38
+	// right 39
+	// down 40
+	// left 37
+
+	// let newGridState = randomBlankGridStart();
+	// if (keyCode == 38) {
+	// 	newGridState = transpose((move(JSON.parse(JSON.stringify(transpose(gridState))))));
+	// } else if(keyCode == 39) {
+	// 	newGridState = reverse(move(JSON.parse(JSON.stringify(reverse(gridState)))));
+	// } else if(keyCode == 40) {
+	// 	newGridState = transpose(reverse(move(JSON.parse(JSON.stringify(reverse(transpose(gridState)))))));
+	// } else if(keyCode == 37) {
+	// 	newGridState = move(JSON.parse(JSON.stringify(gridState)));
+	// }
+	e.preventDefault();
+	let newGridState = simulateMove(gridState, calculateNextMove(gridState, depth));
+
+	if (_.isEqual(newGridState, gridState)) {
+		return;
+	}
+
+	gridState = newGridState.clone();
+
+	let value = 2;
+	if (Math.random() < 0.1) {
+		value = 4;
+	}
+	addTile(gridState, value);
+	
+}
+
+function enterGameOverState() {
+	window.cancelAnimationFrame();
+}
 
 function step(timeStep) {
 	draw();
+
+	let start = performance.now();
+	let dir = calculateNextMove(gridState, depth);
+	if (dir[0] == -1) {
+		return;
+	}
+	let newGridState = simulateMove(gridState, dir[0]);
+	console.log(dir[1] / (performance.now() - start));
+
+	if (checkIfGameOver(gridState)) {
+		gameRunning = false;
+		console.log("Game Over");
+		return;
+	}
+
+	if (_.isEqual(newGridState, gridState)) {
+		return;
+	}
+
+	gridState = newGridState.clone();
+
+
+	let value = 2;
+	if (Math.random() < 0.1) {
+		value = 4;
+	}
+	addTile(gridState, value);
 
 	if (gameRunning) {
 		window.requestAnimationFrame(step);
@@ -283,77 +227,63 @@ function step(timeStep) {
 	}
 }
 
-
-function enterAIGameLoop() {
-	let move = calculateNextMove(gridState);
-
-	
-	let gameState = undefined;
-	switch(move) {
-		case 1: 
-			gameState = up(gridState, gameScore);
-			break;
-		case 2:
-			gameState = right(gridState, gameScore);
-			break;
-		case 3:
-			gameState = down(gridState, gameScore);
-			break;
-		case 4:
-			gameState = left(gridState, gameScore);
-			break;
+function drawGrid() {
+	for (let y = 0; y < 4; y++) {
+		for (let x = 0; x < 4; x++) {
+			ctx.fillStyle = gridColorStates[gridState[y][x]];
+			let xPos = cellSpacing + (cellWidth * x);
+			let yPos = cellSpacing + (cellWidth * y);
+			ctx.fillRect(xPos, yPos, cellWidth-cellSpacing, cellWidth-cellSpacing);	
+			
+			if (gridState[y][x] != 0) {
+				ctx.fillStyle = "#786e65";
+				ctx.font = "70px myFont";
+				let xTextPos = xPos+((cellWidth-cellSpacing)/2);
+				let yTextPos = yPos+(24*(cellWidth-cellSpacing)/32);
+				if (gridState[y][x] > 512) {
+					ctx.font = "40px myFont";
+					yTextPos = yPos+(5*(cellWidth-cellSpacing)/8)
+				}
+				if (hexToHSL(gridColorStates[gridState[y][x]]).L < 0.68) {
+					ctx.fillStyle = "#f9f6f2";
+				} else {
+					ctx.fillStyle = "#776e65";
+				}
+				ctx.textAlign = 'center';
+				ctx.fillText(gridState[y][x], xTextPos, yTextPos);
+			}
+		}
 	}
-
-	gridState = gameState[0];
-	gameScore = gameState[1];
-	let value = 4;
-	if (Math.random() < 0.9) {
-		value = 2;
-	}
-	gridState = addTile(gridState, value);
-
-	if (gameScore > bestScore) {
-		bestScore = gameScore;
-	}
-	scoreLabel.innerHTML = "Score: " + score;
-	bestScoreLabel.innerHTML = "Best Score: " + bestScore;
-
-
-	if (isBoardFull(gridState)) {
-		gameRunning = !checkIfGameOver();
-		clearInterval(gameLoop);
-		gameLoop = null;
-	}
-
-	drawGrid();
 }
 
-let gameLoop = undefined;
+function draw() {
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	scoreLabel.innerHTML = "Score: " + gameScore;
+	bestScoreLabel.innerHTML = "Best Score: " + bestScore;
+
+	drawGrid();	
+}
+
 sButton.addEventListener("click", function() {
-	if (aiCheckBox.checked) {
-		gameLoop = setInterval(enterAIGameLoop, 500);
-
-		return;
-	}
 	gameRunning = true;
-	window.requestAnimationFrame(step);
-
 	gameScore = 0;
 	gridState = randomBlankGridStart();
+	addTile(gridState, 2);
+	addTile(gridState, 2);
 
+	window.requestAnimationFrame(step);
 })
 
 rButton.addEventListener("click", function() {
-	clearInterval(gameLoop);
-	gameLoop = null;
 	if (!gameRunning && bestScore == 0) {
 		return;
 	}
 
 	gameRunning = true;
-	window.requestAnimationFrame(step);
-
 	gameScore = 0;
 	gridState = randomBlankGridStart();
+	addTile(gridState, 2);
+	addTile(gridState, 2);
 
+	window.requestAnimationFrame(step);
 })
