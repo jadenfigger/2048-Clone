@@ -1,7 +1,7 @@
+window.addEventListener("keydown", keyPressed, false);
+
 let canvas = document.getElementById("myCanvas");
 let ctx = canvas.getContext("2d");
-
-window.addEventListener("keydown", keyPressed, false);
 
 let sButton = document.querySelector("#sButton");
 let rButton = document.querySelector("#rButton");
@@ -16,9 +16,18 @@ let gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 1
 let cellSpacing = 15;
 let cellWidth = (document.querySelector("#myCanvas").width - cellSpacing) / 4;
 
-let preTransf;
-let postTransf;
 let gridState;
+
+let depth = 2; 
+
+Array.prototype.clone = function() {
+	let newArray = [];
+
+	for (var i = 0; i < this.length; i++)
+		newArray[i] = this[i].slice();
+	
+	return newArray;
+}
 
 function randomBlankGridStart() {
 	let newGrid = [];
@@ -53,176 +62,6 @@ function addTile(mat, value) {
 	mat[y][x] = value;
 }
 
-function arraysEqual(a1,a2) {
-    /* WARNING: arrays must not contain {objects} or behavior may be undefined */
-    return JSON.stringify(a1)==JSON.stringify(a2);
-}
-
-
-function transpose(mat) {
-    let newList = [];
-    for (let i = 0; i < 4; i++) {
-        newList.push([]);
-        for (let j = 0; j < 4; j++) {
-            newList[i].push(mat[j][i]);
-		}
-	}
-    return newList;
-}
-
-
-function reverse(mat) {
-    let newList = [];
-    for (let i = 0; i < 4; i++) {
-        newList.push([]);
-        for (let j = 0; j < 4; j++) {
-			newList[i].push(mat[i][4-j-1]);
-		}
-	}
-    return newList;
-}
-
-
-function cover_up(mat) {
-    let newGrid = [0, 0, 0, 0];
-    let count = 0;
-	for (let j = 0; j < 4; j++) {
-		if (mat[j] != 0) {
-			newGrid[count] = mat[j];
-			count += 1;
-		}
-	}
-    return newGrid;
-}
-
-function merge(mat) {
-	for (let j = 0; j < 4; j++) {
-		if (mat[j] == mat[j+1] && mat[j] != 0) {
-			mat[j] *= 2;
-			mat[j+1] = 0;
-		}
-	}
-    return mat;
-}
-
-
-function getCombn(arr, pre) {
-	pre = pre || '';
-	if (!arr.length) {
-		return pre;
-	}
-	var ans = arr[0].reduce(function(ans, value) {
-		return ans.concat(getCombn(arr.slice(1), pre + value));
-	}, []);
-	return ans;
-}
-
-function writeJson(mat, key) {
-	window.sessionStorage.setItem(key, JSON.stringify(mat));
-}
-
-function readJson(key) {
-	return JSON.parse(window.sessionStorage.getItem(key));
-}
-
-function createTransLists() {
-	let innerarray = ['0 ', '2 ', '4 ', '8 ', '16 ', '32 ','64 ', '128 ', '256 ', '512 ', '1024 ', '2048 ', '4096 ', '8192 ', '16384 ', '32768 '];
-	let allCombn = getCombn([innerarray, innerarray, innerarray, innerarray]);
-
-	let preTransf = [];
-	let postTransf = [];
-	for (let i = 0; i < allCombn.length; i++) {
-		let preState = allCombn[i].split(' ').map(function (x) { 
-			return parseInt(x, 10); 
-	    });
-		preState.pop();
-		preTransf.push(preState);
-
-		let newState = cover_up(preState);
-		merge(newState);
-		newState = cover_up(newState);
-		let newNewState = newState.map(function (x) { 
-			return parseInt(x, 10); 
-		  });
-		postTransf.push(newNewState);
-	}
-
-	writeJson(preTransf, 'pre');
-	writeJson(postTransf, 'post');
-}
-
-function arrIndexOf(arr, subarr) {
-    let temp = false;
-	for (let i = 0; i < arr.length; i++) {
-		if (arraysEqual(arr[i], subarr)) {
-			return i;
-		}
-	}
-	return -1;
-};
-
-
-function move(arr) {
-	let newArray = [];
-	for (let x = 0; x < 4; x++) {
-		if (arraysEqual(new Array(0, 0, 0, 0), arr[x])) {
-			newArray.push(arr[x]);
-			continue;
-		}
-		let index = arrIndexOf(preTransf, arr[x]);
-		newArray.push(postTransf[index]);
-	}
-	return newArray;
-}
-
-
-
-
-function keyPressed(e) {
-	let keyCode = e.keyCode;
-	// up 38
-	// right 39
-	// down 40
-	// left 37
-
-	let newGridState = randomBlankGridStart();
-	// if (keyCode == 38) {
-	// 	newGridState = transpose((move(JSON.parse(JSON.stringify(transpose(gridState))))));
-	// } else if(keyCode == 39) {
-	// 	newGridState = reverse(move(JSON.parse(JSON.stringify(reverse(gridState)))));
-	// } else if(keyCode == 40) {
-	// 	newGridState = transpose(reverse(move(JSON.parse(JSON.stringify(reverse(transpose(gridState)))))));
-	// } else if(keyCode == 37) {
-	// 	newGridState = move(JSON.parse(JSON.stringify(gridState)));
-	// }
-	e.preventDefault();
-
-	newGridState = simulateMove(gridState, calculateNextMove(gridState));
-
-	if (arraysEqual(newGridState, gridState)) {
-		return;
-	}
-
-	gridState = JSON.parse(JSON.stringify(newGridState));
-
-	let value = 2;
-	if (Math.random() < 0.1) {
-		value = 4;
-	}
-	addTile(gridState, value);
-	
-}
-
-function step(timeStep) {
-	draw();
-
-	if (gameRunning) {
-		window.requestAnimationFrame(step);
-	} else {
-		enterGameOverState();
-	}
-}
-
 function hexToHSL(hex) {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	  r = parseInt(result[1], 16);
@@ -248,7 +87,145 @@ function hexToHSL(hex) {
 	HSL['s']=s;
 	HSL['l']=l;
 	return HSL;
-  }
+}
+
+
+function transpose(mat) {
+    let newList = [];
+    for (let i = 0; i < 4; i++) {
+        newList.push([]);
+        for (let j = 0; j < 4; j++) {
+            newList[i].push(mat[j][i]);
+		}
+	}
+    return newList;
+}
+
+function reverse(mat) {
+    let newList = [];
+    for (let i = 0; i < 4; i++) {
+        newList.push([]);
+        for (let j = 0; j < 4; j++) {
+			newList[i].push(mat[i][4-j-1]);
+		}
+	}
+    return newList;
+}
+
+function cover_up(mat) {
+    let newGrid = [0, 0, 0, 0];
+    let count = 0;
+	for (let j = 0; j < 4; j++) {
+		if (mat[j] != 0) {
+			newGrid[count] = mat[j];
+			count += 1;
+		}
+	}
+    return newGrid;
+}
+
+function checkIfGameOver(arr) {
+	for (let dir = 1; dir <= 4; dir++) {
+		let nGrid = simulateMove(arr, dir);
+		if (!_.isEqual(nGrid, gridState)) {
+			return false;
+		}
+	}
+	return true;
+} 
+
+function merge(mat) {
+	for (let j = 0; j < 4; j++) {
+		if (mat[j] === mat[j+1] && mat[j] !== 0) {
+			mat[j] *= 2;
+			mat[j+1] = 0;
+		}
+	}
+    return mat;
+}
+
+function move(arr) {
+	let newArray = [];
+	for (let x = 0; x < 4; x++) {
+		newArray.push(cover_up(merge(cover_up(arr[x]))));
+	}
+	return newArray;
+}
+
+function keyPressed(e) {
+	let keyCode = e.keyCode;
+	// up 38
+	// right 39
+	// down 40
+	// left 37
+
+	// let newGridState = randomBlankGridStart();
+	// if (keyCode == 38) {
+	// 	newGridState = transpose((move(JSON.parse(JSON.stringify(transpose(gridState))))));
+	// } else if(keyCode == 39) {
+	// 	newGridState = reverse(move(JSON.parse(JSON.stringify(reverse(gridState)))));
+	// } else if(keyCode == 40) {
+	// 	newGridState = transpose(reverse(move(JSON.parse(JSON.stringify(reverse(transpose(gridState)))))));
+	// } else if(keyCode == 37) {
+	// 	newGridState = move(JSON.parse(JSON.stringify(gridState)));
+	// }
+	e.preventDefault();
+	let newGridState = simulateMove(gridState, calculateNextMove(gridState, depth));
+
+	if (_.isEqual(newGridState, gridState)) {
+		return;
+	}
+
+	gridState = newGridState.clone();
+
+	let value = 2;
+	if (Math.random() < 0.1) {
+		value = 4;
+	}
+	addTile(gridState, value);
+	
+}
+
+function enterGameOverState() {
+	window.cancelAnimationFrame();
+}
+
+function step(timeStep) {
+	draw();
+
+	let start = performance.now();
+	let dir = calculateNextMove(gridState, depth);
+	if (dir[0] == -1) {
+		return;
+	}
+	let newGridState = simulateMove(gridState, dir[0]);
+	console.log(dir[1] / (performance.now() - start));
+
+	if (checkIfGameOver(gridState)) {
+		gameRunning = false;
+		console.log("Game Over");
+		return;
+	}
+
+	if (_.isEqual(newGridState, gridState)) {
+		return;
+	}
+
+	gridState = newGridState.clone();
+
+
+	let value = 2;
+	if (Math.random() < 0.1) {
+		value = 4;
+	}
+	addTile(gridState, value);
+
+	if (gameRunning) {
+		window.requestAnimationFrame(step);
+	} else {
+		enterGameOverState();
+	}
+}
 
 function drawGrid() {
 	for (let y = 0; y < 4; y++) {
@@ -287,7 +264,6 @@ function draw() {
 	drawGrid();	
 }
 
-
 sButton.addEventListener("click", function() {
 	gameRunning = true;
 	gameScore = 0;
@@ -296,14 +272,6 @@ sButton.addEventListener("click", function() {
 	addTile(gridState, 2);
 
 	window.requestAnimationFrame(step);
-
-	preTransf = readJson("pre");
-	postTransf = readJson("post");
-	if ( preTransf === undefined || preTransf === null || postTransf === undefined || postTransf === null)  {
-		createTransLists();
-		preTransf = readJson("pre");
-		postTransf = readJson("post");	
-	}
 })
 
 rButton.addEventListener("click", function() {
@@ -312,9 +280,10 @@ rButton.addEventListener("click", function() {
 	}
 
 	gameRunning = true;
-	window.requestAnimationFrame(step);
-
 	gameScore = 0;
 	gridState = randomBlankGridStart();
+	addTile(gridState, 2);
+	addTile(gridState, 2);
 
+	window.requestAnimationFrame(step);
 })
