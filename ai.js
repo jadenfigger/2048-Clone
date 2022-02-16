@@ -9,12 +9,13 @@ function calculateNextMove(gs, depth) {
 	for (let move = 1; move <= 4; move++) {
 		let score = calculateScore(gs, move, depth);
 
-		if (score > bestScore) {
+		if (score >= bestScore) {
 			bestScore = score;
 			bestMove = move;
 		}
 	}
-	return [bestMove, counter];
+	console.log(counter, bestMove);
+	return bestMove
 }
 
 function calculateScore(board, move, depth) {
