@@ -89,6 +89,7 @@ function hexToHSL(hex) {
 	return HSL;
 }
 
+
 function transpose(mat) {
     let newList = [];
     for (let i = 0; i < 4; i++) {
@@ -194,9 +195,11 @@ function step(timeStep) {
 
 	let start = performance.now();
 	let dir = calculateNextMove(gridState, depth);
-	if (dir == -1) {
+	if (dir[0] == -1) {
+		return;
 	}
-	let newGridState = simulateMove(gridState, dir);
+	let newGridState = simulateMove(gridState, dir[0]);
+	console.log(dir[1] / (performance.now() - start));
 
 	if (checkIfGameOver(gridState)) {
 		gameRunning = false;
