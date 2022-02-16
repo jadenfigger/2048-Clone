@@ -7,10 +7,13 @@ let sButton = document.querySelector("#sButton");
 let rButton = document.querySelector("#rButton");
 let scoreLabel = document.querySelector("#score");
 let bestScoreLabel = document.querySelector("#bScore");
+let runsTextBox = document.getElementById("runsAmount");
+runsTextBox.value = 20;
 
 let gameRunning = false;
 let gameScore = 0;
 let bestScore = 0;
+let tempScore = 0;
 
 let gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563", 32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcf72", 512: "#edcf72", 1024: "#edc53f", 2048: "#edc22e"};
 let cellSpacing = 15;
@@ -125,9 +128,9 @@ function cover_up(mat) {
 }
 
 function checkIfGameOver(arr) {
-	for (let dir = 1; dir <= 4; dir++) {
+	for (let dir = 0; dir < 4; dir++) {
 		let nGrid = simulateMove(arr, dir);
-		if (!_.isEqual(nGrid, gridState)) {
+		if (!_.isEqual(nGrid, arr)) {
 			return false;
 		}
 	}
@@ -137,6 +140,7 @@ function checkIfGameOver(arr) {
 function merge(mat) {
 	for (let j = 0; j < 4; j++) {
 		if (mat[j] === mat[j+1] && mat[j] !== 0) {
+			tempScore += mat[j];
 			mat[j] *= 2;
 			mat[j+1] = 0;
 		}
@@ -169,20 +173,19 @@ function keyPressed(e) {
 	// } else if(keyCode == 37) {
 	// 	newGridState = move(JSON.parse(JSON.stringify(gridState)));
 	// }
-	e.preventDefault();
-	let newGridState = simulateMove(gridState, calculateNextMove(gridState, depth));
+	// e.preventDefault();
 
-	if (_.isEqual(newGridState, gridState)) {
-		return;
-	}
+	// if (_.isEqual(newGridState, gridState)) {
+	// 	return;
+	// }
 
-	gridState = newGridState.clone();
+	// gridState = newGridState.clone();
 
-	let value = 2;
-	if (Math.random() < 0.1) {
-		value = 4;
-	}
-	addTile(gridState, value);
+	// let value = 2;
+	// if (Math.random() < 0.1) {
+	// 	value = 4;
+	// }
+	// addTile(gridState, value);
 	
 }
 
@@ -193,13 +196,8 @@ function enterGameOverState() {
 function step(timeStep) {
 	draw();
 
-	let start = performance.now();
-	let dir = calculateNextMove(gridState, depth);
-	if (dir[0] == -1) {
-		return;
-	}
-	let newGridState = simulateMove(gridState, dir[0]);
-	console.log(dir[1] / (performance.now() - start));
+	let best = findBestMove(gridState);
+	newGridState = simulateMove(gridState, best);
 
 	if (checkIfGameOver(gridState)) {
 		gameRunning = false;
