@@ -11,15 +11,20 @@ canvas {
 	margin-right: 30px;
 }
 
+
 .gameContainer {
 	margin-top: auto;
 	margin-bottom: auto;
 }
 
-.gameSettings, .scores {
+.gameSettings, .scores, .aboutGame {
 	background-color: #e0d8d0;
 	border: 1px solid #222;
 	border-radius: 3px;
+}
+
+.title {
+	margin-bottom: 100px;
 }
 
 .scores {
