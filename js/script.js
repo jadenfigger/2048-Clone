@@ -7,18 +7,23 @@ let sButton = document.querySelector("#sButton");
 let rButton = document.querySelector("#rButton");
 let scoreLabel = document.querySelector("#score");
 let bestScoreLabel = document.querySelector("#bScore");
+let runsTextBox = document.getElementById("runsAmount");
+runsTextBox.value = 20;
 
 let gameRunning = false;
 let gameScore = 0;
 let bestScore = 0;
+let tempScore = 0;
 
-let gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563", 32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcf72", 512: "#edcf72", 1024: "#edc53f", 2048: "#edc22e"};
-let cellSpacing = 15;
-let cellWidth = (document.querySelector("#myCanvas").width - cellSpacing) / 4;
+let gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563", 
+					  32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcf72", 512: "#edcf72",
+				    1024: "#edc53f", 2048: "#edc22e", 4096: "#7333d4", 8192: "#4b00bd", 16384: "#2e0073", 32768: "#0a001a"};
+
+let canvasWidth = document.querySelector("#myCanvas").width;
+let cellSpacing = canvasWidth / 45;
+let cellWidth = (canvasWidth - cellSpacing) / 4;
 
 let gridState;
-
-let depth = 2; 
 
 Array.prototype.clone = function() {
 	let newArray = [];
@@ -89,6 +94,7 @@ function hexToHSL(hex) {
 	return HSL;
 }
 
+
 function transpose(mat) {
     let newList = [];
     for (let i = 0; i < 4; i++) {
@@ -124,9 +130,9 @@ function cover_up(mat) {
 }
 
 function checkIfGameOver(arr) {
-	for (let dir = 1; dir <= 4; dir++) {
+	for (let dir = 0; dir < 4; dir++) {
 		let nGrid = simulateMove(arr, dir);
-		if (!_.isEqual(nGrid, gridState)) {
+		if (!_.isEqual(nGrid, arr)) {
 			return false;
 		}
 	}
@@ -136,6 +142,7 @@ function checkIfGameOver(arr) {
 function merge(mat) {
 	for (let j = 0; j < 4; j++) {
 		if (mat[j] === mat[j+1] && mat[j] !== 0) {
+			tempScore += mat[j];
 			mat[j] *= 2;
 			mat[j+1] = 0;
 		}
@@ -168,20 +175,19 @@ function keyPressed(e) {
 	// } else if(keyCode == 37) {
 	// 	newGridState = move(JSON.parse(JSON.stringify(gridState)));
 	// }
-	e.preventDefault();
-	let newGridState = simulateMove(gridState, calculateNextMove(gridState, depth));
+	// e.preventDefault();
 
-	if (_.isEqual(newGridState, gridState)) {
-		return;
-	}
+	// if (_.isEqual(newGridState, gridState)) {
+	// 	return;
+	// }
 
-	gridState = newGridState.clone();
+	// gridState = newGridState.clone();
 
-	let value = 2;
-	if (Math.random() < 0.1) {
-		value = 4;
-	}
-	addTile(gridState, value);
+	// let value = 2;
+	// if (Math.random() < 0.1) {
+	// 	value = 4;
+	// }
+	// addTile(gridState, value);
 	
 }
 
@@ -192,11 +198,8 @@ function enterGameOverState() {
 function step(timeStep) {
 	draw();
 
-	let start = performance.now();
-	let dir = calculateNextMove(gridState, depth);
-	if (dir == -1) {
-	}
-	let newGridState = simulateMove(gridState, dir);
+	let best = findBestMove(gridState);
+	newGridState = simulateMove(gridState, best);
 
 	if (checkIfGameOver(gridState)) {
 		gameRunning = false;
@@ -234,14 +237,20 @@ function drawGrid() {
 			
 			if (gridState[y][x] != 0) {
 				ctx.fillStyle = "#786e65";
-				ctx.font = "70px myFont";
+				ctx.font = "60px myFont";
 				let xTextPos = xPos+((cellWidth-cellSpacing)/2);
-				let yTextPos = yPos+(24*(cellWidth-cellSpacing)/32);
-				if (gridState[y][x] > 512) {
+				let yTextPos = yPos+(23*(cellWidth-cellSpacing)/32);
+				if (gridState[y][x] >= 128 && gridState[y][x] <= 512) {
+					ctx.font = "50px myFont";
+					yTextPos = yPos+(22*(cellWidth-cellSpacing)/32)
+				} else if (gridState[y][x] > 512 && gridState[y][x] <= 8192) {
 					ctx.font = "40px myFont";
-					yTextPos = yPos+(5*(cellWidth-cellSpacing)/8)
+					yTextPos = yPos+(20*(cellWidth-cellSpacing)/32)
+				} else if (gridState[y][x] > 8192) {
+					ctx.font = "35px myFont";
+					yTextPos = yPos+(19*(cellWidth-cellSpacing)/32)
 				}
-				if (hexToHSL(gridColorStates[gridState[y][x]]).L < 0.68) {
+				if (hexToHSL(gridColorStates[gridState[y][x]]).l < 0.68) {
 					ctx.fillStyle = "#f9f6f2";
 				} else {
 					ctx.fillStyle = "#776e65";
@@ -267,6 +276,8 @@ sButton.addEventListener("click", function() {
 	gridState = randomBlankGridStart();
 	addTile(gridState, 2);
 	addTile(gridState, 2);
+
+	// gridState = [[2, 4, 8, 16], [32, 64, 128, 256], [512, 1024, 2048, 4096], [8192, 16384, 32768, 0]];
 
 	window.requestAnimationFrame(step);
 })
