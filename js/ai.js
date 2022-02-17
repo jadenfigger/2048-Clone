@@ -15,6 +15,7 @@ function findBestMove(grid) {
 }
 
 function multiRandomRun(grid, move, runs) {
+	console.log(move);
 	let total = 0.0;
 	for (let i = 0; i < runs; i++) {
 		tempScore = 0;
