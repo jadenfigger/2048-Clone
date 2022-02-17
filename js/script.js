@@ -135,12 +135,21 @@ function cover_up(mat) {
 }
 
 function checkIfGameOver(arr) {
+	for (let i = 0; i < 4; i++) {
+		for (let j = 0; j < 4; j++) {
+			if (arr[i][j] == 0) {
+				return false;
+			}
+		}
+	}
+
 	for (let dir = 0; dir < 4; dir++) {
 		let nGrid = simulateMove(arr, dir);
 		if (!_.isEqual(nGrid, arr)) {
 			return false;
 		}
 	}
+
 	return true;
 } 
 
@@ -180,6 +189,7 @@ function keyPressed(e) {
 			return;
 		} 
 		let newGridState = randomBlankGridStart();
+		tempScore = 0;
 		if (keyCode == 38) {
 			newGridState = transpose((move(JSON.parse(JSON.stringify(transpose(gridState))))));
 		} else if(keyCode == 39) {
@@ -189,6 +199,7 @@ function keyPressed(e) {
 		} else if(keyCode == 37) {
 			newGridState = move(JSON.parse(JSON.stringify(gridState)));
 		}
+		gameScore += tempScore;
 		e.preventDefault();
 
 		if (_.isEqual(newGridState, gridState)) {
@@ -207,7 +218,9 @@ function keyPressed(e) {
 
 function runAI() {
 	let best = findBestMove(gridState);
+	tempScore = 0;
 	newGridState = simulateMove(gridState, best);
+	gameScore += tempScore;
 
 	if (checkIfGameOver(gridState)) {
 		gameRunning = false;
@@ -232,6 +245,9 @@ function runAI() {
 function step(timeStep) {
 	if (gameMode === 1) {
 		runAI();
+	}
+	if (gameScore > bestScore) {
+		bestScore = gameScore;
 	}
 
 	if (gameRunning && !gamePaused) {
