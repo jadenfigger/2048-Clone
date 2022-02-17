@@ -10,39 +10,46 @@
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>
-		<div class="container">
-			<div class="col heading">
-				<div class="row">
-					<div class="col d-flex flex-column justify-content-end text-center">
-						<h1>2048 Game</h1>
-						<p>Cloned by Jaden Figger</p>
+		<div class="d-flex justify-content-evenly p-5" style="height: 100vh;">
+			<div class="leftSide">
+				<div class="title text-center mb-5">
+					<h1 class="display-4">2048 Game</h1>
+					<p>Cloned by Jaden Figger</p>
+				</div>
+				<div class="scores text-center">
+					<h3 id="score">Score: 0</h3>
+					<h3 id="bScore">Best Score: 0</h3>
+				</div>
+				<div class="d-flex flex-column gameSettings p-3 text-center">
+					<div class="btn-group mb-2" role="group" aria-label="Basic radio toggle button group">
+						<input type="radio" class="btn-check" name="btnMode" id="btnSingle" autocomplete="off" checked>
+  						<label class="btn btn-outline-secondary" for="btnSingle">Single Player</label>
+
+						<input type="radio" class="btn-check" name="btnMode" id="btnAI" autocomplete="off">
+  						<label class="btn btn-outline-secondary" for="btnAI">Computer AI</label>
 					</div>
-					<div class="col d-flex flex-column justify-content-end text-center">
-						<h3 id="score">Score: 0</h3>
-						<h3 id="bScore">Best Score: 0</h3>
-						<input class="form-control text-center" id="runsAmount" type="integer">
+					<label>Runs Amount:</label>
+					<div class="gameSettings mb-2">
+						<input type="integer" id="runsAmount" class="form-control text-center">
+					</div>
+					<div class="buttons m-2">
+						<button id="sButton">Start Game</button>
+						<button id="rButton">Restart</button>
 					</div>
 				</div>
-				
 			</div>
-			<div class="col aboveGame">
-				<button id="sButton">Start Game</button>
-				<button id="rButton">Restart</button>
-				<div style="margin: 0 auto; width: 50%">
-					<label style="float: left; margin-left: 40px;">Use AI</label>
-					<input style="float: left;" type="checkbox" name="useAI" value="AI" id="ai">
-				</div>
-			</div>
-			<div class="col gameContainer">
+			<div class="gameContainer">
 				<canvas id="myCanvas" width="500" height="500"></canvas>
 			</div>
+			<div class="aboutGame">
+				<h3 class="text-center">How the game works:</h3>
+				<p>Use your arrow keys to move the tiles. When two tiles with the same number touch, they merge into one!</p>
+				<br>
+				<br>
+				<h3 class="text-center">How the AI works:</h3>
+
+			</div>
 		</div>
-
-
-		<br>
-		<br>
-		<br>
-		
 		<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.10/lodash.min.js"></script>
 		<script src="js/ai.js"></script>
 		<script src="js/script.js"></script>

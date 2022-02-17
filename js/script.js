@@ -3,23 +3,29 @@ window.addEventListener("keydown", keyPressed, false);
 let canvas = document.getElementById("myCanvas");
 let ctx = canvas.getContext("2d");
 
-let sButton = document.querySelector("#sButton");
-let rButton = document.querySelector("#rButton");
-let scoreLabel = document.querySelector("#score");
-let bestScoreLabel = document.querySelector("#bScore");
-let runsTextBox = document.getElementById("runsAmount");
+const sButton = document.querySelector("#sButton");
+const rButton = document.querySelector("#rButton");
+const scoreLabel = document.querySelector("#score");
+const bestScoreLabel = document.querySelector("#bScore");
+const btnSingle = document.querySelector("#btnSingle");
+const btnAI = document.querySelector("#btnAI");
+const runsTextBox = document.querySelector("#runsAmount");
+
 runsTextBox.value = 20;
 
 let gameRunning = false;
+let gamePaused = false;
+let gameMode = 0;
 let gameScore = 0;
 let bestScore = 0;
 let tempScore = 0;
 
-let gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563", 
+const gridColorStates = {0: "#cdc0b4", 2: "#eee4da", 4: "#ede0c8", 8: "#f2b179", 16: "#f59563", 
 					  32: "#f67c5f", 64: "#f65e3b", 128: "#edcf72", 256: "#edcf72", 512: "#edcf72",
 				    1024: "#edc53f", 2048: "#edc22e", 4096: "#7333d4", 8192: "#4b00bd", 16384: "#2e0073", 32768: "#0a001a"};
 
 let canvasWidth = document.querySelector("#myCanvas").width;
+let canvasHeight = document.querySelector("#myCanvas").height;
 let cellSpacing = canvasWidth / 45;
 let cellWidth = (canvasWidth - cellSpacing) / 4;
 
@@ -94,7 +100,6 @@ function hexToHSL(hex) {
 	return HSL;
 }
 
-
 function transpose(mat) {
     let newList = [];
     for (let i = 0; i < 4; i++) {
@@ -164,46 +169,49 @@ function keyPressed(e) {
 	// right 39
 	// down 40
 	// left 37
+	// space 32
+	if (gamePaused && keyCode === 32) {
+		gamePaused = false;
+		draw();
+		window.requestAnimationFrame(step);
+	}
+	if (gameMode === 0) {
+		if (keyCode !== 38 && keyCode !== 39 && keyCode !== 40 && keyCode !== 37) {
+			return;
+		} 
+		let newGridState = randomBlankGridStart();
+		if (keyCode == 38) {
+			newGridState = transpose((move(JSON.parse(JSON.stringify(transpose(gridState))))));
+		} else if(keyCode == 39) {
+			newGridState = reverse(move(JSON.parse(JSON.stringify(reverse(gridState)))));
+		} else if(keyCode == 40) {
+			newGridState = transpose(reverse(move(JSON.parse(JSON.stringify(reverse(transpose(gridState)))))));
+		} else if(keyCode == 37) {
+			newGridState = move(JSON.parse(JSON.stringify(gridState)));
+		}
+		e.preventDefault();
 
-	// let newGridState = randomBlankGridStart();
-	// if (keyCode == 38) {
-	// 	newGridState = transpose((move(JSON.parse(JSON.stringify(transpose(gridState))))));
-	// } else if(keyCode == 39) {
-	// 	newGridState = reverse(move(JSON.parse(JSON.stringify(reverse(gridState)))));
-	// } else if(keyCode == 40) {
-	// 	newGridState = transpose(reverse(move(JSON.parse(JSON.stringify(reverse(transpose(gridState)))))));
-	// } else if(keyCode == 37) {
-	// 	newGridState = move(JSON.parse(JSON.stringify(gridState)));
-	// }
-	// e.preventDefault();
+		if (_.isEqual(newGridState, gridState)) {
+			return;
+		}
 
-	// if (_.isEqual(newGridState, gridState)) {
-	// 	return;
-	// }
+		gridState = newGridState.clone();
 
-	// gridState = newGridState.clone();
-
-	// let value = 2;
-	// if (Math.random() < 0.1) {
-	// 	value = 4;
-	// }
-	// addTile(gridState, value);
-	
+		let value = 2;
+		if (Math.random() < 0.1) {
+			value = 4;
+		}
+		addTile(gridState, value);
+	}
 }
 
-function enterGameOverState() {
-	window.cancelAnimationFrame();
-}
-
-function step(timeStep) {
-	draw();
-
+function runAI() {
 	let best = findBestMove(gridState);
 	newGridState = simulateMove(gridState, best);
 
 	if (checkIfGameOver(gridState)) {
 		gameRunning = false;
-		console.log("Game Over");
+		endGame();
 		return;
 	}
 
@@ -219,11 +227,16 @@ function step(timeStep) {
 		value = 4;
 	}
 	addTile(gridState, value);
+}
 
-	if (gameRunning) {
+function step(timeStep) {
+	if (gameMode === 1) {
+		runAI();
+	}
+
+	if (gameRunning && !gamePaused) {
+		draw();
 		window.requestAnimationFrame(step);
-	} else {
-		enterGameOverState();
 	}
 }
 
@@ -270,6 +283,47 @@ function draw() {
 	drawGrid();	
 }
 
+function pauseGame() {
+	gamePaused = true;
+	window.cancelAnimationFrame(step);
+
+	ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+	ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+	ctx.fillStyle = "#f9f6f2";
+	ctx.font = "30px myFont";
+	ctx.fillText("Press 'space' to continue", canvasWidth/2, canvasHeight/2);
+}
+
+function endGame() {
+	gameRunning = false;
+	window.cancelAnimationFrame(step);
+
+	ctx.fillStyle = 'rgba(100, 100, 100, 0.5)';
+	ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+	ctx.fillStyle = "#f9f6f2";
+	ctx.font = "50px myFont";
+	ctx.fillText("Game Over", canvasWidth/2, canvasHeight/2);
+	
+}
+
+runsTextBox.addEventListener("input", function() {
+	if (gamePaused || !gameRunning) {
+		return;
+	}
+	pauseGame();
+})
+
+
+btnSingle.addEventListener("click", function() {
+	gameMode = 0;
+})
+
+btnAI.addEventListener("click", function() {
+	gameMode = 1;
+})
+
 sButton.addEventListener("click", function() {
 	gameRunning = true;
 	gameScore = 0;
@@ -278,15 +332,10 @@ sButton.addEventListener("click", function() {
 	addTile(gridState, 2);
 
 	// gridState = [[2, 4, 8, 16], [32, 64, 128, 256], [512, 1024, 2048, 4096], [8192, 16384, 32768, 0]];
-
 	window.requestAnimationFrame(step);
 })
 
 rButton.addEventListener("click", function() {
-	if (!gameRunning && bestScore == 0) {
-		return;
-	}
-
 	gameRunning = true;
 	gameScore = 0;
 	gridState = randomBlankGridStart();
