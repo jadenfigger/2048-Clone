@@ -179,11 +179,6 @@ function keyPressed(e) {
 	// down 40
 	// left 37
 	// space 32
-	if (gamePaused && keyCode === 32) {
-		gamePaused = false;
-		draw();
-		window.requestAnimationFrame(step);
-	}
 	if (gameMode === 0) {
 		if (keyCode !== 38 && keyCode !== 39 && keyCode !== 40 && keyCode !== 37) {
 			return;
@@ -308,7 +303,7 @@ function pauseGame() {
 
 	ctx.fillStyle = "#f9f6f2";
 	ctx.font = "30px myFont";
-	ctx.fillText("Press 'space' to continue", canvasWidth/2, canvasHeight/2);
+	ctx.fillText("Click on game to continue", canvasWidth/2, canvasHeight/2);
 }
 
 function endGame() {
@@ -359,4 +354,12 @@ rButton.addEventListener("click", function() {
 	addTile(gridState, 2);
 
 	window.requestAnimationFrame(step);
+})
+
+canvas.addEventListener("mousedown", function() {
+	if (gamePaused) {
+		gamePaused = false;
+		draw();
+		window.requestAnimationFrame(step);
+	}
 })
