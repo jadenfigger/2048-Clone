@@ -10,6 +10,7 @@ const bestScoreLabel = document.querySelector("#bScore");
 const btnSingle = document.querySelector("#btnSingle");
 const btnAI = document.querySelector("#btnAI");
 const runsTextBox = document.querySelector("#runsAmount");
+const scoresContainer = document.querySelector(".scoresContainer");
 
 runsTextBox.value = 20;
 
@@ -30,6 +31,9 @@ let cellSpacing = canvasWidth / 45;
 let cellWidth = (canvasWidth - cellSpacing) / 4;
 
 let gridState;
+let scores = {};
+let divScoreContainer = {};
+let runs = 0;
 
 Array.prototype.clone = function() {
 	let newArray = [];
@@ -316,7 +320,35 @@ function endGame() {
 	ctx.fillStyle = "#f9f6f2";
 	ctx.font = "50px myFont";
 	ctx.fillText("Game Over", canvasWidth/2, canvasHeight/2);
-	
+
+	runs++;
+	let highestValue = 0;
+	gridState.forEach((outer) => {outer.forEach((inner) => {if (inner > highestValue) highestValue = inner})})
+	removeAllChildNodes(scoresContainer);
+
+	if (scores.hasOwnProperty(highestValue)) {
+		scores[highestValue] += 1;
+	} else {
+		scores[highestValue] = 1;
+	}
+
+	sortObjectByKeys(scores);
+
+	for (let key in scores) {
+		let nDiv = document.createElement("div");
+		nDiv.innerHTML = `${highestValue}:  ${scores[highestValue]} (${scores[highestValue]/runs * 100}%)`;
+		scoresContainer.appendChild(nDiv);
+	}
+}
+
+function removeAllChildNodes(parent) {
+    while (parent.firstChild) {
+        parent.removeChild(parent.firstChild);
+    }
+}
+
+function sortObjectByKeys(o) {
+    return Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {});
 }
 
 runsTextBox.addEventListener("input", function() {
@@ -343,6 +375,7 @@ sButton.addEventListener("click", function() {
 	addTile(gridState, 2);
 
 	// gridState = [[2, 4, 8, 16], [32, 64, 128, 256], [512, 1024, 2048, 4096], [8192, 16384, 32768, 0]];
+
 	window.requestAnimationFrame(step);
 })
 
